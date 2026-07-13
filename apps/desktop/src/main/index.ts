@@ -23,6 +23,9 @@ import { StyleProfileService } from './analysis/StyleProfileService'
 import { ContextBuilder } from './context/ContextBuilder'
 import { ConversationContextService } from './context/ConversationContextService'
 import { prisma } from './database/prisma'
+import { AIService } from './ai/AIService'
+import { OpenRouterProvider } from './ai/OpenRouterProvider'
+import { PromptBuilder } from './ai/PromptBuilder'
 
 const browserManager = new BrowserManager()
 const browserController = new BrowserController(browserManager)
@@ -104,8 +107,12 @@ app.whenReady().then(async () => {
     styleAnalysisSettingsRepository
   )
 
+  const aiService = new AIService(new PromptBuilder(), new OpenRouterProvider())
+
   const messageQueue = new MessageQueue()
-  const messageWorker = new MessageWorker(new MessageProcessor(styleProfileService))
+  const messageWorker = new MessageWorker(
+    new MessageProcessor(styleProfileService, conversationContextService, aiService)
+  )
 
   const messageService = new MessageService(
     new MessageRepository(),
