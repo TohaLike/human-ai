@@ -9,6 +9,7 @@ import { VKLongPollListener } from './vk/VKLongPollListener'
 import { VKMessageParser } from './vk/VKMessageParser'
 import { MessageBus } from './events/MessageBus'
 import { MessageService } from './messages/MessageService'
+import { MessageRepository } from './messages/MessageRepository'
 
 const browserManager = new BrowserManager()
 const browserController = new BrowserController(browserManager)
@@ -75,7 +76,7 @@ app.whenReady().then(async () => {
     messageBus
   )
 
-  const messageService = new MessageService()
+  const messageService = new MessageService(new MessageRepository())
 
   listener.start()
 

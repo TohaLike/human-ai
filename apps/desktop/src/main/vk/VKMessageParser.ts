@@ -12,7 +12,7 @@ export class VKMessageParser {
       date: new Date(update[5] * 1000),
       text: update[6],
       flags: update[2],
-      isOutgoing: (update[2] & 2) !== 0 || update[2] === 1
+      isMine: (update[2] & 2) !== 0 || update[2] === 1
     }
   }
 }
