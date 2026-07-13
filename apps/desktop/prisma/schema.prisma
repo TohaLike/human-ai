@@ -31,5 +31,6 @@ model Message {
   text           String
   date           DateTime
   isMine         Boolean
+  processed      Boolean      @default(false)
   createdAt      DateTime     @default(now())
 }

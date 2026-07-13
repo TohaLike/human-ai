@@ -28,7 +28,10 @@
     "@prisma/adapter-better-sqlite3": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "better-sqlite3": "^12.11.1",
+    "bullmq": "^5.80.2",
+    "dotenv": "^17.4.2",
     "electron-updater": "^6.3.9",
+    "ioredis": "^5.11.1",
     "playwright": "^1.61.1",
     "prisma": "^7.8.0"
   },

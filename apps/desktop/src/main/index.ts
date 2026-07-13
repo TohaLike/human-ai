@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -12,6 +13,9 @@ import { MessageService } from './messages/MessageService'
 import { MessageRepository } from './messages/MessageRepository'
 import { ConversationService } from './conversation/ConversationService'
 import { ConversationRepository } from './conversation/ConversationRepository'
+import { MessageQueue } from './queue/MessageQueue'
+import { MessageWorker } from './queue/MessageWorker'
+import { MessageProcessor } from './processors/MessageProcessor'
 
 const browserManager = new BrowserManager()
 const browserController = new BrowserController(browserManager)
@@ -78,10 +82,19 @@ app.whenReady().then(async () => {
     messageBus
   )
 
+  const messageQueue = new MessageQueue()
+  const messageWorker = new MessageWorker(new MessageProcessor())
+
   const messageService = new MessageService(
     new MessageRepository(),
-    new ConversationService(new ConversationRepository())
+    new ConversationService(new ConversationRepository()),
+    messageQueue
   )
+
+  app.on('before-quit', async () => {
+    await messageWorker.close()
+    await messageQueue.close()
+  })
 
   listener.start()
 
