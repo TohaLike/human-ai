@@ -1,10 +1,12 @@
 import { Page } from 'playwright'
 import { VKMessageParser } from './VKMessageParser'
+import { MessageBus } from '../events/MessageBus'
 
 export class VKLongPollListener {
   constructor(
     private page: Page,
-    private parser: VKMessageParser
+    private parser: VKMessageParser,
+    private messageBus: MessageBus
   ) {}
 
   start() {
@@ -27,7 +29,7 @@ export class VKLongPollListener {
           const message = this.parser.parse(update)
 
           if (message) {
-            console.log('📩 New VK message:', message)
+            this.messageBus.emit("message", message)
           }
         }
       } catch (error) {

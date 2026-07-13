@@ -7,6 +7,8 @@ import { BrowserController } from './browser/BrowserController'
 import { BrowserManager } from './browser/BrowserManager'
 import { VKLongPollListener } from './vk/VKLongPollListener'
 import { VKMessageParser } from './vk/VKMessageParser'
+import { MessageBus } from './events/MessageBus'
+import { MessageService } from './messages/MessageService'
 
 const browserManager = new BrowserManager()
 const browserController = new BrowserController(browserManager)
@@ -65,9 +67,21 @@ app.whenReady().then(async () => {
 
   await browserController.open('')
 
-  const listener = new VKLongPollListener(browserManager.getPage(), new VKMessageParser())
+  const messageBus = new MessageBus()
+
+  const listener = new VKLongPollListener(
+    browserManager.getPage(),
+    new VKMessageParser(),
+    messageBus
+  )
+
+  const messageService = new MessageService()
 
   listener.start()
+
+  messageBus.on('message', async (message) => {
+    await messageService.onMessage(message)
+  })
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
