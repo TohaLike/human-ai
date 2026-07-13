@@ -1,9 +1,36 @@
-node_modules
-dist
-out
-.DS_Store
-.eslintcache
-*.log*
-.vscode
-user-data
+# Dependencies
+node_modules/
+
+# Build
+dist/
+out/
+
+# Prisma generated client
+src/generated/prisma/
+
+# Database
+prisma/*.db
+prisma/*.db-journal
+
+# Environment
 .env
+.env.*
+
+# Electron / Browser session
+user-data/
+
+# Logs
+*.log
+*.log.*
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+
+# ESLint
+.eslintcache
+
+# TypeScript
+*.tsbuildinfo
