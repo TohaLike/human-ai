@@ -13,13 +13,14 @@ datasource db {
 }
 
 model Conversation {
-  id         String    @id @default(uuid())
-  externalId String
-  platform   String
-  title      String?
-  messages   Message[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id           String         @id @default(uuid())
+  externalId   String
+  platform     String
+  title        String?
+  messages     Message[]
+  styleProfile StyleProfile?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   @@unique([platform, externalId])
 }
@@ -33,4 +34,18 @@ model Message {
   isMine         Boolean
   processed      Boolean      @default(false)
   createdAt      DateTime     @default(now())
+}
+
+model StyleProfile {
+  id             String        @id @default(uuid())
+  conversationId String?       @unique
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+  data           Json
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model StyleAnalysisSettings {
+  id                String  @id @default("default")
+  useGlobalMessages Boolean @default(false)
 }

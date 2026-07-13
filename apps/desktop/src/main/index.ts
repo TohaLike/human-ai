@@ -16,6 +16,10 @@ import { ConversationRepository } from './conversation/ConversationRepository'
 import { MessageQueue } from './queue/MessageQueue'
 import { MessageWorker } from './queue/MessageWorker'
 import { MessageProcessor } from './processors/MessageProcessor'
+import { MessageAnalyzer } from './analysis/MessageAnalyzer'
+import { StyleProfileRepository } from './analysis/StyleProfileRepository'
+import { StyleAnalysisSettingsRepository } from './analysis/StyleAnalysisSettingsRepository'
+import { StyleProfileService } from './analysis/StyleProfileService'
 
 const browserManager = new BrowserManager()
 const browserController = new BrowserController(browserManager)
@@ -82,8 +86,14 @@ app.whenReady().then(async () => {
     messageBus
   )
 
+  const styleProfileService = new StyleProfileService(
+    new StyleProfileRepository(),
+    new MessageAnalyzer(),
+    new StyleAnalysisSettingsRepository()
+  )
+
   const messageQueue = new MessageQueue()
-  const messageWorker = new MessageWorker(new MessageProcessor())
+  const messageWorker = new MessageWorker(new MessageProcessor(styleProfileService))
 
   const messageService = new MessageService(
     new MessageRepository(),

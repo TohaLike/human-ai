@@ -1,6 +1,9 @@
 import { prisma } from '../database/prisma'
+import { StyleProfileService } from '../analysis/StyleProfileService'
 
 export class MessageProcessor {
+  constructor(private readonly styleProfileService?: StyleProfileService) {}
+
   async process(messageId: number): Promise<void> {
     const message = await prisma.message.findUnique({
       where: { id: messageId }
@@ -25,5 +28,9 @@ export class MessageProcessor {
       where: { id: messageId },
       data: { processed: true }
     })
+
+    if (message.isMine && this.styleProfileService) {
+      await this.styleProfileService.analyzeUserStyle(message.conversationId)
+    }
   }
 }
