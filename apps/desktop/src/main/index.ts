@@ -20,6 +20,9 @@ import { MessageAnalyzer } from './analysis/MessageAnalyzer'
 import { StyleProfileRepository } from './analysis/StyleProfileRepository'
 import { StyleAnalysisSettingsRepository } from './analysis/StyleAnalysisSettingsRepository'
 import { StyleProfileService } from './analysis/StyleProfileService'
+import { ContextBuilder } from './context/ContextBuilder'
+import { ConversationContextService } from './context/ConversationContextService'
+import { prisma } from './database/prisma'
 
 const browserManager = new BrowserManager()
 const browserController = new BrowserController(browserManager)
@@ -86,10 +89,19 @@ app.whenReady().then(async () => {
     messageBus
   )
 
+  const styleProfileRepository = new StyleProfileRepository()
+  const styleAnalysisSettingsRepository = new StyleAnalysisSettingsRepository()
+
   const styleProfileService = new StyleProfileService(
-    new StyleProfileRepository(),
+    styleProfileRepository,
     new MessageAnalyzer(),
-    new StyleAnalysisSettingsRepository()
+    styleAnalysisSettingsRepository
+  )
+
+  const conversationContextService = new ConversationContextService(
+    new ContextBuilder(),
+    styleProfileRepository,
+    styleAnalysisSettingsRepository
   )
 
   const messageQueue = new MessageQueue()
@@ -107,6 +119,17 @@ app.whenReady().then(async () => {
   })
 
   listener.start()
+
+  if (is.dev) {
+    const latestConversation = await prisma.conversation.findFirst({
+      orderBy: { updatedAt: 'desc' }
+    })
+
+    if (latestConversation) {
+      const context = await conversationContextService.getContext(latestConversation.id)
+      console.log('🧩 Conversation context:', JSON.stringify(context, null, 2))
+    }
+  }
 
   messageBus.on('message', async (message) => {
     await messageService.onMessage(message)
