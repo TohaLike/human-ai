@@ -63,15 +63,24 @@ export class MessageProcessor {
       return
     }
 
-    const shouldGenerateAiReply =
-      !message.isMine || (message.isMine && isSelfChatTestMode())
+    const selfChatTest = isSelfChatTestMode()
+    const shouldGenerateAiReply = !message.isMine || (message.isMine && selfChatTest)
+
+    if (!shouldGenerateAiReply) {
+      console.log('⏭ Skip AI: own message and self-chat mode is off')
+      return
+    }
 
     if (
-      shouldGenerateAiReply &&
       this.conversationContextService &&
       this.aiService &&
       this.replyService
     ) {
+      console.log(
+        selfChatTest && message.isMine
+          ? '🧪 Self-chat mode: generating reply to own message'
+          : '💬 Generating reply to incoming message'
+      )
       this.scheduleDebouncedReply(message.conversationId, message.id)
     }
   }
@@ -99,36 +108,40 @@ export class MessageProcessor {
     conversationId: string,
     scheduledMessageId: number
   ): Promise<void> {
-    const latestIncoming = await prisma.message.findFirst({
+    const selfChatTest = isSelfChatTestMode()
+
+    // In self-chat all messages are isMine=true, so we must trigger on own messages.
+    const latestTrigger = await prisma.message.findFirst({
       where: {
         conversationId,
-        isMine: false,
-        text: { not: '' }
+        text: { not: '' },
+        ...(selfChatTest ? { isMine: true } : { isMine: false })
       },
       orderBy: { date: 'desc' }
     })
 
-    if (!latestIncoming) {
+    if (!latestTrigger) {
+      console.log('⏭ Skip AI: no trigger message found after debounce')
       return
     }
 
-    if (latestIncoming.id !== scheduledMessageId) {
+    if (latestTrigger.id !== scheduledMessageId) {
       console.log('📨 Replying to newer message after debounce')
     }
 
     const existingReply = await prisma.generatedReply.findFirst({
       where: {
-        sourceMessageId: latestIncoming.id,
+        sourceMessageId: latestTrigger.id,
         status: { in: ['PENDING', 'APPROVED', 'SENT'] }
       }
     })
 
     if (existingReply) {
-      console.log(`⏭ Skip AI: reply already exists for message ${latestIncoming.id}`)
+      console.log(`⏭ Skip AI: reply already exists for message ${latestTrigger.id}`)
       return
     }
 
-    await this.generateAiReply(conversationId, latestIncoming.id)
+    await this.generateAiReply(conversationId, latestTrigger.id)
   }
 
   private async isEchoOfSentReply(message: {

@@ -199,7 +199,21 @@ function App(): React.JSX.Element {
             <input
               type="checkbox"
               checked={config.aiAutoSend}
-              onChange={(event) => updateField('aiAutoSend', event.target.checked)}
+              onChange={(event) => {
+                const checked = event.target.checked
+                updateField('aiAutoSend', checked)
+                void window.config
+                  .save({ ...config, aiAutoSend: checked })
+                  .then((saved) => {
+                    setConfig(saved)
+                    appendLog(`автоотправка: ${checked ? 'вкл' : 'выкл'}`)
+                  })
+                  .catch((error: unknown) => {
+                    appendLog(
+                      `save error: ${error instanceof Error ? error.message : String(error)}`
+                    )
+                  })
+              }}
             />
             <span>Автоотправка ответов в VK</span>
           </label>
@@ -208,7 +222,21 @@ function App(): React.JSX.Element {
             <input
               type="checkbox"
               checked={config.aiTriggerOnOwnMessages}
-              onChange={(event) => updateField('aiTriggerOnOwnMessages', event.target.checked)}
+              onChange={(event) => {
+                const checked = event.target.checked
+                updateField('aiTriggerOnOwnMessages', checked)
+                void window.config
+                  .save({ ...config, aiTriggerOnOwnMessages: checked })
+                  .then((saved) => {
+                    setConfig(saved)
+                    appendLog(`отвечать на свои: ${checked ? 'вкл' : 'выкл'}`)
+                  })
+                  .catch((error: unknown) => {
+                    appendLog(
+                      `save error: ${error instanceof Error ? error.message : String(error)}`
+                    )
+                  })
+              }}
             />
             <span>Отвечать на свои сообщения (self-chat тест)</span>
           </label>

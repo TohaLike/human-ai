@@ -1,13 +1,15 @@
 import { StyleProfileData } from '../analysis/StyleProfile'
 import { ContextMessage, ConversationContext } from '../context/types'
-import { isSelfChatTestMode } from './config'
+import { getSystemPrompt, isSelfChatTestMode } from './config'
 import { AIPrompt } from './AIProvider'
+import { CapitalizationStyle, detectCapitalizationStyle } from './normalizeReply'
 
 export class PromptBuilder {
   build(context: ConversationContext, sourceMessageId: number): AIPrompt {
     const interlocutorName = context.interlocutor.title ?? 'Собеседник'
     const selfChatTest = isSelfChatTestMode()
     const messages = context.messages.filter((message) => message.text.trim().length > 0)
+    const capitalization = detectCapitalizationStyle(messages)
     const trigger = this.resolveTriggerMessage(
       messages,
       sourceMessageId,
@@ -15,20 +17,11 @@ export class PromptBuilder {
       selfChatTest
     )
     const historyMessages = messages.filter((message) => message.id !== trigger.id)
-    const styleSection = this.buildStyleSection(context.styleProfile)
+    const styleSection = this.buildStyleSection(context.styleProfile, capitalization)
     const historySection = this.buildHistorySection(historyMessages, interlocutorName)
 
     return {
-      system: [
-        'Ты пишешь ответ за пользователя в личной переписке VK.',
-        'Пиши естественно, как живой человек в мессенджере: коротко, без официоза и без странных вопросов.',
-        'Отвечай только на последнее сообщение собеседника, не выдумывай новые темы.',
-        'Если собеседник не здоровается — не начинай с приветствия.',
-        'Если сообщение короткое или непонятное — ответь так же кратко и по делу.',
-        'Верни только текст ответа, без кавычек и пояснений.',
-        '',
-        styleSection
-      ].join('\n'),
+      system: this.buildSystemPrompt(styleSection, capitalization),
       user: [
         'История диалога:',
         '',
@@ -41,9 +34,51 @@ export class PromptBuilder {
     }
   }
 
-  private buildStyleSection(profile: StyleProfileData | null): string {
+  private buildSystemPrompt(
+    styleSection: string,
+    capitalization: CapitalizationStyle
+  ): string {
+    const customPrompt = getSystemPrompt()
+
+    // Custom persona from env replaces the default beta system rules entirely.
+    if (customPrompt) {
+      return [customPrompt, '', styleSection].join('\n')
+    }
+
+    return [
+      'Ты пишешь ответ за пользователя в личной переписке VK.',
+      'Пиши как в мессенджере: коротко, живо, без официоза и без странных вопросов.',
+      'Отвечай только на последнее сообщение собеседника, не выдумывай новые темы.',
+      'Если собеседник не здоровается — не начинай с приветствия.',
+      'Если сообщение короткое или непонятное — ответь так же кратко и по делу.',
+      'Никогда не ставь точку в конце ответа.',
+      'Не пиши «книжные» предложения с точками внутри — лучше одна короткая фраза или вопрос.',
+      'Знаки ? и ! можно оставлять, если они уместны.',
+      capitalization === 'lower'
+        ? 'Начинай сообщение со строчной буквы, как в обычном чате.'
+        : 'Начинай сообщение с заглавной буквы, как обычно пишет пользователь.',
+      'Не прыгай между стилями: регистр должен быть одинаковым во всём ответе.',
+      'Верни только текст ответа, без кавычек и пояснений.',
+      '',
+      styleSection
+    ].join('\n')
+  }
+
+  private buildStyleSection(
+    profile: StyleProfileData | null,
+    capitalization: CapitalizationStyle
+  ): string {
+    const casing =
+      capitalization === 'lower'
+        ? 'со строчной буквы'
+        : 'с заглавной буквы'
+
     if (!profile || profile.totalMessages < 3) {
-      return 'Стиль пользователя: мало данных, отвечай просто и по-человечески.'
+      return [
+        'Стиль пользователя: мало данных, отвечай просто и по-человечески.',
+        `- начинай ${casing}`,
+        '- без точки в конце'
+      ].join('\n')
     }
 
     const words = profile.commonWords.slice(0, 8).join(', ') || 'нет данных'
@@ -52,6 +87,8 @@ export class PromptBuilder {
     return [
       'Стиль пользователя:',
       `- длина ответа: примерно ${Math.max(8, profile.averageMessageLength)} символов`,
+      `- начинай ${casing}`,
+      '- без точки в конце',
       `- emoji: ${emoji}`,
       `- характерные слова (используй уместно, не в каждом ответе): ${words}`
     ].join('\n')

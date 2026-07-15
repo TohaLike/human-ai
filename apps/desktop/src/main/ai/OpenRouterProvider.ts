@@ -56,24 +56,12 @@ export class OpenRouterProvider implements AIProvider {
     }
 
     const data = (await response.json()) as OpenRouterResponse
-    const text = this.normalizeReply(data.choices?.[0]?.message?.content)
+    const text = data.choices?.[0]?.message?.content?.trim()
 
     if (!text) {
       throw new AIProviderError('Empty response from model', 'EMPTY_RESPONSE')
     }
 
     return text
-  }
-
-  private normalizeReply(raw?: string): string {
-    if (!raw) {
-      return ''
-    }
-
-    return raw
-      .trim()
-      .replace(/^["'«]+|["'»]+$/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
   }
 }

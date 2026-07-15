@@ -2,6 +2,16 @@ export function isSelfChatTestMode(): boolean {
   return process.env.AI_TRIGGER_ON_OWN_MESSAGES === 'true'
 }
 
+/** Custom system prompt from env. If set, replaces the default beta persona rules. */
+export function getSystemPrompt(): string | null {
+  const value = process.env.AI_SYSTEM_PROMPT?.trim()
+  if (!value) {
+    return null
+  }
+
+  return value.replace(/\\n/g, '\n')
+}
+
 export function isAutoSendEnabled(): boolean {
   return process.env.AI_AUTO_SEND === 'true'
 }
