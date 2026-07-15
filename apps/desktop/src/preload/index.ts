@@ -3,19 +3,15 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { systemApi } from '../main/ipc/system'
 import { browserApi } from './browser'
 import { repliesApi } from './replies'
+import { configApi } from './config'
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
-
     contextBridge.exposeInMainWorld('system', systemApi)
-
     contextBridge.exposeInMainWorld('browser', browserApi)
-
     contextBridge.exposeInMainWorld('replies', repliesApi)
+    contextBridge.exposeInMainWorld('config', configApi)
   } catch (error) {
     console.error(error)
   }
@@ -28,4 +24,6 @@ if (process.contextIsolated) {
   window.browser = browserApi
   // @ts-ignore (define in dts)
   window.replies = repliesApi
+  // @ts-ignore (define in dts)
+  window.config = configApi
 }

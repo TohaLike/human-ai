@@ -14,13 +14,19 @@ export class BrowserManager {
       })
     }
 
-    this.page = await this.context.newPage()
+    if (!this.page || this.page.isClosed()) {
+      this.page = await this.context.newPage()
+    }
 
-    await this.page?.goto(url)
+    await this.page.goto(url, { waitUntil: 'domcontentloaded' })
+  }
+
+  isReady(): boolean {
+    return Boolean(this.page && !this.page.isClosed())
   }
 
   getPage(): Page {
-    if (!this.page) {
+    if (!this.page || this.page.isClosed()) {
       throw new Error('Page is not initialized')
     }
 

@@ -1,5 +1,6 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import { BrowserAPI } from '../main/browser/types'
+import { AppConfig, AppConfigUpdate } from '../main/config/types'
 import { GeneratedReplyRecord } from '../main/replies/types'
 
 interface SystemAPI {
@@ -14,11 +15,18 @@ interface RepliesAPI {
   approveAndSend(id: string): Promise<GeneratedReplyRecord>
 }
 
+interface ConfigAPI {
+  get(): Promise<AppConfig>
+  save(update: AppConfigUpdate): Promise<AppConfig>
+  launchChat(chatUrl?: string): Promise<AppConfig>
+}
+
 declare global {
   interface Window {
     electron: ElectronAPI
     system: SystemAPI
     browser: BrowserAPI
     replies: RepliesAPI
+    config: ConfigAPI
   }
 }

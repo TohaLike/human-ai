@@ -11,11 +11,11 @@ interface OpenRouterResponse {
 }
 
 export class OpenRouterProvider implements AIProvider {
-  private readonly apiKey = process.env.OPENROUTER_API_KEY
-  private readonly model = process.env.OPENROUTER_MODEL ?? 'openai/gpt-4o-mini'
-
   async generate(prompt: AIPrompt): Promise<string> {
-    if (!this.apiKey) {
+    const apiKey = process.env.OPENROUTER_API_KEY
+    const model = process.env.OPENROUTER_MODEL ?? 'openai/gpt-4o-mini'
+
+    if (!apiKey) {
       throw new AIProviderError('OPENROUTER_API_KEY is not set', 'MISSING_API_KEY')
     }
 
@@ -25,13 +25,13 @@ export class OpenRouterProvider implements AIProvider {
       response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'https://human-ai.local',
           'X-Title': 'Human AI Desktop'
         },
         body: JSON.stringify({
-          model: this.model,
+          model,
           temperature: getTemperature(),
           max_tokens: getMaxTokens(),
           messages: [
