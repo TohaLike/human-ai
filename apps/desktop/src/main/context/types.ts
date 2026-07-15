@@ -1,6 +1,7 @@
 import { StyleProfileData } from '../analysis/StyleProfile'
 
 export interface ContextMessage {
+  id: number
   text: string
   isMine: boolean
   date: Date

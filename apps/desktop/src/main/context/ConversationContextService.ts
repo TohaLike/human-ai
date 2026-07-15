@@ -27,7 +27,7 @@ export class ConversationContextService {
       where: { conversationId },
       orderBy: { date: 'desc' },
       take: MESSAGE_LIMIT,
-      select: { text: true, isMine: true, date: true }
+      select: { id: true, text: true, isMine: true, date: true }
     })
 
     const messages = [...messagesDesc].reverse()

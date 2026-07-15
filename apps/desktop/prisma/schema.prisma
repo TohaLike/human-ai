@@ -13,27 +13,29 @@ datasource db {
 }
 
 model Conversation {
-  id           String         @id @default(uuid())
-  externalId   String
-  platform     String
-  title        String?
-  messages     Message[]
-  styleProfile StyleProfile?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id               String           @id @default(uuid())
+  externalId       String
+  platform         String
+  title            String?
+  messages         Message[]
+  styleProfile     StyleProfile?
+  generatedReplies GeneratedReply[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   @@unique([platform, externalId])
 }
 
 model Message {
-  id             Int          @id
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  text           String
-  date           DateTime
-  isMine         Boolean
-  processed      Boolean      @default(false)
-  createdAt      DateTime     @default(now())
+  id               Int              @id
+  conversationId   String
+  conversation     Conversation     @relation(fields: [conversationId], references: [id])
+  text             String
+  date             DateTime
+  isMine           Boolean
+  processed        Boolean          @default(false)
+  generatedReplies GeneratedReply[]
+  createdAt        DateTime         @default(now())
 }
 
 model StyleProfile {
@@ -48,4 +50,26 @@ model StyleProfile {
 model StyleAnalysisSettings {
   id                String  @id @default("default")
   useGlobalMessages Boolean @default(false)
+}
+
+enum ReplyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SENT
+}
+
+model GeneratedReply {
+  id              String       @id @default(uuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+  sourceMessageId Int
+  sourceMessage   Message      @relation(fields: [sourceMessageId], references: [id])
+  text            String
+  status          ReplyStatus  @default(PENDING)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([conversationId, status])
+  @@index([sourceMessageId])
 }

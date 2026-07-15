@@ -30,12 +30,21 @@ const messagesDesc = await prisma.message.findMany({
   where: { conversationId: conversation.id },
   orderBy: { date: 'desc' },
   take: 30,
-  select: { text: true, isMine: true, date: true }
+  select: { id: true, text: true, isMine: true, date: true }
 })
 
 const styleRecord = await prisma.styleProfile.findFirst({
   where: { conversationId: conversation.id }
 })
+
+const messages = [...messagesDesc].reverse()
+const sourceMessage =
+  [...messages].reverse().find((message) => !message.isMine) ?? messages.at(-1)
+
+if (!sourceMessage) {
+  console.log('NO_SOURCE_MESSAGE')
+  process.exit(1)
+}
 
 const context = new ContextBuilder().build({
   conversation: {
@@ -44,16 +53,18 @@ const context = new ContextBuilder().build({
     externalId: conversation.externalId,
     title: conversation.title ?? undefined
   },
-  messages: [...messagesDesc].reverse(),
+  messages,
   styleProfile: styleRecord ? styleRecord.data : null
 })
 
 console.log('conversation:', conversation.externalId)
 console.log('messages:', context.messages.length)
+console.log('sourceMessageId:', sourceMessage.id)
 console.log('AI_TRIGGER_ON_OWN_MESSAGES:', process.env.AI_TRIGGER_ON_OWN_MESSAGES)
 
 const reply = await new AIService(new PromptBuilder(), new OpenRouterProvider()).generateReply(
-  context
+  context,
+  sourceMessage.id
 )
 
 console.log('REPLY:', reply)

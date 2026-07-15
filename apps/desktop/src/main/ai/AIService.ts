@@ -9,8 +9,11 @@ export class AIService {
     private readonly provider: AIProvider
   ) {}
 
-  async generateReply(context: ConversationContext): Promise<string> {
-    const prompt = this.promptBuilder.build(context)
+  async generateReply(
+    context: ConversationContext,
+    sourceMessageId: number
+  ): Promise<string> {
+    const prompt = this.promptBuilder.build(context, sourceMessageId)
 
     try {
       const reply = await this.provider.generate(prompt)

@@ -1,4 +1,5 @@
-import { AIProvider } from './AIProvider'
+import { AIProvider, AIPrompt } from './AIProvider'
+import { getMaxTokens, getTemperature } from './config'
 import { AIProviderError } from './types'
 
 interface OpenRouterResponse {
@@ -13,7 +14,7 @@ export class OpenRouterProvider implements AIProvider {
   private readonly apiKey = process.env.OPENROUTER_API_KEY
   private readonly model = process.env.OPENROUTER_MODEL ?? 'openai/gpt-4o-mini'
 
-  async generate(prompt: string): Promise<string> {
+  async generate(prompt: AIPrompt): Promise<string> {
     if (!this.apiKey) {
       throw new AIProviderError('OPENROUTER_API_KEY is not set', 'MISSING_API_KEY')
     }
@@ -31,7 +32,12 @@ export class OpenRouterProvider implements AIProvider {
         },
         body: JSON.stringify({
           model: this.model,
-          messages: [{ role: 'user', content: prompt }]
+          temperature: getTemperature(),
+          max_tokens: getMaxTokens(),
+          messages: [
+            { role: 'system', content: prompt.system },
+            { role: 'user', content: prompt.user }
+          ]
         })
       })
     } catch (error) {
@@ -50,12 +56,24 @@ export class OpenRouterProvider implements AIProvider {
     }
 
     const data = (await response.json()) as OpenRouterResponse
-    const text = data.choices?.[0]?.message?.content?.trim()
+    const text = this.normalizeReply(data.choices?.[0]?.message?.content)
 
     if (!text) {
       throw new AIProviderError('Empty response from model', 'EMPTY_RESPONSE')
     }
 
     return text
+  }
+
+  private normalizeReply(raw?: string): string {
+    if (!raw) {
+      return ''
+    }
+
+    return raw
+      .trim()
+      .replace(/^["'«]+|["'»]+$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
   }
 }

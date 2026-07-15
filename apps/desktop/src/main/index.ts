@@ -26,6 +26,9 @@ import { prisma } from './database/prisma'
 import { AIService } from './ai/AIService'
 import { OpenRouterProvider } from './ai/OpenRouterProvider'
 import { PromptBuilder } from './ai/PromptBuilder'
+import { ReplyRepository } from './replies/ReplyRepository'
+import { ReplyService } from './replies/ReplyService'
+import { VKSender } from './vk/VKSender'
 
 const browserManager = new BrowserManager()
 const browserController = new BrowserController(browserManager)
@@ -82,7 +85,10 @@ app.whenReady().then(async () => {
 
   createWindow()
 
-  await browserController.open('')
+  await browserController.open(
+    process.env.VK_CHAT_URL ??
+      'https://vk.com/im/convo/232940913?entrypoint=vkcom_right_column_menu'
+  )
 
   const messageBus = new MessageBus()
 
@@ -108,10 +114,40 @@ app.whenReady().then(async () => {
   )
 
   const aiService = new AIService(new PromptBuilder(), new OpenRouterProvider())
+  const replyService = new ReplyService(new ReplyRepository())
+  const vkSender = new VKSender(browserManager)
+
+  if (is.dev) {
+    ipcMain.handle('replies:pending', async (_, conversationId?: string) => {
+      return replyService.getPendingReplies(conversationId)
+    })
+
+    ipcMain.handle('replies:approve', async (_, id: string) => {
+      return replyService.approveReply(id)
+    })
+
+    ipcMain.handle('replies:reject', async (_, id: string) => {
+      return replyService.rejectReply(id)
+    })
+
+    ipcMain.handle('replies:send', async (_, id: string) => {
+      return replyService.sendApprovedReply(id, vkSender)
+    })
+
+    ipcMain.handle('replies:approve-and-send', async (_, id: string) => {
+      return replyService.approveAndSendReply(id, vkSender)
+    })
+  }
 
   const messageQueue = new MessageQueue()
   const messageWorker = new MessageWorker(
-    new MessageProcessor(styleProfileService, conversationContextService, aiService)
+    new MessageProcessor(
+      styleProfileService,
+      conversationContextService,
+      aiService,
+      replyService,
+      vkSender
+    )
   )
 
   const messageService = new MessageService(
@@ -139,7 +175,11 @@ app.whenReady().then(async () => {
   }
 
   messageBus.on('message', async (message) => {
-    await messageService.onMessage(message)
+    try {
+      await messageService.onMessage(message)
+    } catch (error) {
+      console.error('❌ Failed to handle VK message:', error)
+    }
   })
 
   app.on('activate', function () {
