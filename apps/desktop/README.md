@@ -1,34 +1,21 @@
 # desktop
 
-An Electron application with React and TypeScript
+Electron application for **Human AI** (VK chat assistant).
 
-## Recommended IDE Setup
+For the full project documentation (architecture, setup, Dev Container, configuration), see the root README:
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+→ [../../README.md](../../README.md)
 
-## Project Setup
-
-### Install
+## Quick commands
 
 ```bash
-$ npm install
-```
+# Install
+npm install
+npx prisma generate
 
-### Development
+# Redis + app (recommended on Mac)
+npm run dev:host
 
-```bash
-$ npm run dev
-```
-
-### Build
-
-```bash
-# For windows
-$ npm run build:win
-
-# For macOS
-$ npm run build:mac
-
-# For Linux
-$ npm run build:linux
+# App only (Redis must already be running)
+npm run dev
 ```

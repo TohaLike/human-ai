@@ -1,0 +1,52 @@
+{
+  "name": "human-ai",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "features": {
+    "ghcr.io/devcontainers/features/desktop-lite:1": {
+      "password": "vscode",
+      "webPort": "6080",
+      "vncPort": "5901"
+    }
+  },
+  "forwardPorts": [6080, 5901, 6379],
+  "portsAttributes": {
+    "6080": {
+      "label": "noVNC (Electron / Playwright UI)",
+      "onAutoForward": "notify"
+    },
+    "6379": {
+      "label": "Redis",
+      "onAutoForward": "silent"
+    }
+  },
+  "remoteEnv": {
+    "REDIS_HOST": "redis",
+    "REDIS_PORT": "6379",
+    "ELECTRON_DISABLE_SANDBOX": "1",
+    "DISPLAY": ":1"
+  },
+  "containerEnv": {
+    "REDIS_HOST": "redis",
+    "REDIS_PORT": "6379",
+    "ELECTRON_DISABLE_SANDBOX": "1"
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "Prisma.prisma",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": true
+      }
+    }
+  }
+}

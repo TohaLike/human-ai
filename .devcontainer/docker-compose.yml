@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/workspace:cached
+    working_dir: /workspace
+    command: sleep infinity
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      ELECTRON_DISABLE_SANDBOX: "1"
+      DISPLAY: "${DISPLAY:-:1}"
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Needed for Electron / Chromium inside the container
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    shm_size: "1gb"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - human-ai-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    command: ["redis-server", "--appendonly", "yes"]
+
+volumes:
+  human-ai-redis-data:
