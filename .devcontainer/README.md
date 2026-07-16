@@ -1,31 +1,34 @@
 # Dev Container — Human AI
 
-Один вход: **Cursor / VS Code → “Reopen in Container”**.
+One entry point: **Cursor / VS Code → “Reopen in Container”**.
 
-Внутри поднимаются:
-- Node 22 + зависимости проекта
+This environment starts:
+
+- Node 22 + project dependencies
 - Redis (`redis:6379`)
-- desktop-lite (VNC / noVNC) для окон Electron и Playwright
+- desktop-lite (VNC / noVNC) for Electron and Playwright windows
 
-## Как открыть
+> **Note:** messenger support is **VK only for now**. The same Dev Container will cover future messenger adapters as they are added.
 
-1. Установи Docker Desktop.
-2. В Cursor: `Dev Containers: Reopen in Container`.
-3. Дождись `postCreate` (`npm install`, Prisma, Playwright).
-4. Открой noVNC: [http://localhost:6080](http://localhost:6080)  
-   пароль: `vscode`
-5. В терминале контейнера:
+## How to open
+
+1. Install Docker Desktop.
+2. In Cursor: `Dev Containers: Reopen in Container`.
+3. Wait for `postCreate` (`npm install`, Prisma, Playwright).
+4. Open noVNC: [http://localhost:6080](http://localhost:6080)  
+   Password: `vscode`
+5. In the container terminal:
 
 ```bash
 cd apps/desktop
 npm run dev
 ```
 
-Окна Electron / Chromium (VK) смотри в noVNC.
+Watch Electron / Chromium (VK) windows in noVNC.
 
-## Переменные
+## Environment variables
 
-В контейнере уже задано:
+Inside the container these are already set:
 
 ```env
 REDIS_HOST=redis
@@ -34,48 +37,56 @@ ELECTRON_DISABLE_SANDBOX=1
 DISPLAY=:1
 ```
 
-`.env` в `apps/desktop` может содержать `REDIS_HOST=127.0.0.1` для запуска на Mac.
-В Dev Container значение из `remoteEnv` / `containerEnv` перекрывает его для процесса Electron, если переменная уже экспортирована в shell.
+`apps/desktop/.env` may still contain `REDIS_HOST=127.0.0.1` for Mac host runs.
+In the Dev Container, `remoteEnv` / `containerEnv` override that for the app process when the variable is already exported in the shell.
 
-Если Redis вдруг стучится на `127.0.0.1`, в терминале контейнера:
+If Redis unexpectedly connects to `127.0.0.1`, run:
 
 ```bash
 export REDIS_HOST=redis
 cd apps/desktop && npm run dev
 ```
 
-Или в `.env` для контейнера поставь:
+Or set this in `.env` when working only inside the container:
 
 ```env
 REDIS_HOST=redis
 ```
 
-## Без Dev Container (только Redis)
+## Without the full Dev Container (Redis only)
 
-С хоста:
+From the host:
 
 ```bash
 docker compose -f .devcontainer/docker-compose.yml up -d redis
 cd apps/desktop && npm run dev
 ```
 
-Остановка Redis:
+Stop Redis:
 
 ```bash
 docker compose -f .devcontainer/docker-compose.yml stop redis
 ```
 
-## Полезные команды
+Or from `apps/desktop`:
+
+```bash
+npm run infra:up
+npm run infra:down
+npm run dev:host   # Redis + Electron on the host
+```
+
+## Useful commands
 
 ```bash
 # Redis ping
 redis-cli -h redis ping
 
-# Логи redis
+# Redis logs
 docker compose -f .devcontainer/docker-compose.yml logs -f redis
 ```
 
-## Зачем так
+## Why desktop-lite?
 
-Electron + headed Playwright внутри «голого» Linux-контейнера без дисплея не показывают окна.
-`desktop-lite` даёт виртуальный рабочий стол через браузер — это самый простой full Dev Container для этого стека.
+Electron + headed Playwright inside a plain Linux container have no display, so windows do not show up.
+`desktop-lite` provides a virtual desktop in the browser — the simplest full Dev Container setup for this stack.
