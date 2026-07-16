@@ -1,6 +1,9 @@
 # Human AI
 
-Desktop assistant that listens to **VK Messenger** chats, learns your writing style, generates AI replies via **OpenRouter**, and can send them back into VK automatically or after approval.
+Desktop assistant that listens to messenger chats, learns your writing style, generates AI replies via **OpenRouter**, and can send them back automatically or after approval.
+
+**Current status:** only **VK Messenger** is supported.  
+**Roadmap:** the architecture is built around a platform-agnostic core (`Conversation.platform`, message bus, queues, AI, replies), so support will expand to **other messengers** next (same product flow: listen → style → AI reply → send).
 
 The main app lives in `apps/desktop` — an **Electron + React + TypeScript** application with **Playwright** for browser automation, **SQLite (Prisma)** for storage, and **Redis + BullMQ** for background message processing.
 
@@ -24,9 +27,11 @@ The main app lives in `apps/desktop` — an **Electron + React + TypeScript** ap
 
 ## What this project does
 
+**Today (VK only):**
+
 1. Opens a real VK chat in Chromium (Playwright, persistent profile).
 2. Intercepts incoming VK long-poll updates (`ruim`).
-3. Saves messages into a local SQLite database.
+3. Saves messages into a local SQLite database (with `platform = "vk"`).
 4. Queues each message for processing (BullMQ / Redis).
 5. Updates a **style profile** from your own messages.
 6. Builds conversation context and asks an LLM for a reply.
@@ -34,6 +39,8 @@ The main app lives in `apps/desktop` — an **Electron + React + TypeScript** ap
 8. Optionally auto-sends the reply into VK through the same Playwright page.
 
 You control AI behavior (model, delays, system prompt, auto-send) from the Electron settings UI or from `.env`.
+
+**Later:** additional messenger adapters (listen + send) will plug into the same core pipeline. The UI and AI layers stay shared; only the transport/integration layer changes per messenger.
 
 ---
 
@@ -76,8 +83,8 @@ You control AI behavior (model, delays, system prompt, auto-send) from the Elect
 | Area | Path | Role |
 |------|------|------|
 | App bootstrap | `apps/desktop/src/main/index.ts` | Wires IPC, queue, AI, VK session |
-| VK listen | `src/main/vk/VKLongPollListener.ts` | Parses long-poll updates |
-| VK send | `src/main/vk/VKSender.ts` | Types + sends reply in chat UI |
+| VK listen *(current adapter)* | `src/main/vk/VKLongPollListener.ts` | Parses VK long-poll updates |
+| VK send *(current adapter)* | `src/main/vk/VKSender.ts` | Types + sends reply in VK chat UI |
 | Messages | `src/main/messages/` | Persist + enqueue |
 | Queue | `src/main/queue/` | BullMQ producer/worker + Redis |
 | Style | `src/main/analysis/` | Style profile from your messages |
